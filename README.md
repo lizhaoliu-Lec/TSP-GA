@@ -3,7 +3,7 @@ This repository contains a generic Python implementation of a Genetic Algorithm 
 
 ## Output Example
 
-![output-ga](https://i.imgur.com/Zkj0z7m.png)
+![output-ga](https://github.com/lizhaoliu-Lec/TSP-GA/blob/master/results/sample_result.png)
     
 ## Instructions
 - Install required packages:
