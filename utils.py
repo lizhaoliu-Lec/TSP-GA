@@ -13,7 +13,7 @@ def get_genes_from(fn):
 
 
 def plot(costs, individual, save_to=None):
-    plt.rcParams['figure.figsize'] = (5.0, 4.0)  # set default size of plots
+    plt.rcParams['figure.figsize'] = (6.0, 3.0)  # set default size of plots
     plt.rcParams['image.interpolation'] = 'nearest'
     plt.rcParams['image.cmap'] = 'gray'
     plt.figure(1)
