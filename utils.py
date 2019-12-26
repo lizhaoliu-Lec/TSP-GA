@@ -13,6 +13,9 @@ def get_genes_from(fn):
 
 
 def plot(costs, individual, save_to=None):
+    plt.rcParams['figure.figsize'] = (5.0, 4.0)  # set default size of plots
+    plt.rcParams['image.interpolation'] = 'nearest'
+    plt.rcParams['image.cmap'] = 'gray'
     plt.figure(1)
     plt.subplot(121)
     plot_ga_convergence(costs)
@@ -30,7 +33,7 @@ def plot_ga_convergence(costs):
     plt.title("GA Convergence")
     plt.xlabel('num generation')
     plt.ylabel('cost')
-    plt.text(x[len(x) // 2], costs[0], 'min cost: {}'.format(costs[-1]), ha='center', va='center')
+    plt.text(x[len(x) // 2], costs[0], 'min cost: {}'.format(min(costs)), ha='center', va='center')
     plt.plot(x, costs, '-')
 
 

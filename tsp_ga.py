@@ -99,7 +99,7 @@ class SimpleGeneticAlgorithm(object):
         if self.verbose:
             print(
                 "-- TSP-GA -- Evolution finished after {} generations in {} s".format(self.num_generation, total_time))
-            print("-- TSP-GA -- Minimum travelling cost {} KM".format(self.history['min_cost']))
+            print("-- TSP-GA -- Minimum travelling cost {}".format(self.history['min_cost']))
 
         self.history['generations'] = self.num_generation
         self.history['total_time'] = total_time
