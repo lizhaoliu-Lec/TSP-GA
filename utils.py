@@ -22,9 +22,10 @@ def plot(costs, individual, save_to=None):
 
     plt.subplot(122)
     plot_route(individual)
+    plt.tight_layout()
 
     if save_to is not None:
-        plt.savefig(save_to, dpi=100)
+        plt.savefig(save_to, dpi=300)
     plt.show()
 
 
@@ -50,4 +51,4 @@ def plot_route(individual):
         else:
             x2, y2 = individual.genes[i + 1].x, individual.genes[i + 1].y
 
-        plt.plot([x, x2], [y, y2], 'k-', c='g')
+        plt.plot([x, x2], [y, y2], 'k-', c='r')
