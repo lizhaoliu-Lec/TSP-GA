@@ -3,7 +3,7 @@ This repository contains a generic Python implementation of a Genetic Algorithm 
 
 ## Output Example
 <div  align="center">    
-<img src="https://github.com/lizhaoliu-Lec/TSP-GA/blob/master/results/sample_result.png" width = "400" height = "300" alt="sample_result" />
+<img src="https://github.com/lizhaoliu-Lec/TSP-GA/blob/master/results/sample_result.png" width = "600" height = "300" alt="sample_result" />
 </div>
     
 ## Instructions
