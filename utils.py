@@ -24,7 +24,7 @@ def plot(costs, individual, save_to=None):
     plot_route(individual)
 
     if save_to is not None:
-        plt.savefig(save_to, dpi=300)
+        plt.savefig(save_to, dpi=100)
     plt.show()
 
 
