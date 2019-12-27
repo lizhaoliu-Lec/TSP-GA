@@ -75,11 +75,11 @@ def args_parser():
                         help='Data containing the geographical coordinates of cities')
 
     # General GA
-    parser.add_argument('--ga_type', type=str, default='ElitistReserveGeneticAlgorithm',
+    parser.add_argument('--ga_type', type=str, default='SteadyGeneticAlgorithm',
                         help='Specify which GA algorithm to use')
     parser.add_argument('--no_verbose', dest='verbose', action='store_false',
                         help='Print out information or not')
-    parser.add_argument('--pop_size', type=int, default=200, help='Population size')
+    parser.add_argument('--pop_size', type=int, default=300, help='Population size')
     parser.add_argument('--n_gen', type=int, default=500, help='Number of equal generations before stopping')
     parser.add_argument('--print_every', type=int, default=10, help='Interval to print cost')
     parser.add_argument('--er', type=float, default=0.5, help='Elitism keeping rate')
@@ -93,9 +93,11 @@ def args_parser():
     parser.add_argument('--base', type=float, default=0.5, help="ExponentialRankingSelection's base")
 
     # Mutation
-    parser.add_argument('--mutation_type', type=str, default='FlipInverseMutation',
+    parser.add_argument('--mutation_type', type=str, default='WarmUpFlipInverseMutation',
                         help='Specify which mutation strategy to use')
     parser.add_argument('--mr', type=float, default=0.02, help='Mutation rate')
+    parser.add_argument('--warm_up', type=int, default=800, help="WarmUpFlipInverseMutation's warm up step")
+    parser.add_argument('--decay', type=float, default=8000, help="WarmUpFlipInverseMutation's decay step")
 
     # Crossover
     parser.add_argument('--crossover_type', type=str, default='TwoPointOrderedCrossover',

@@ -1,5 +1,6 @@
 from sys import maxsize
 from time import time
+from copy import deepcopy
 
 from ga.base import Population
 
@@ -59,7 +60,7 @@ class GeneticAlgorithm(object):
         if self.verbose:
             print(
                 "Evolution finished after {} generations in {} s".format(self.num_generation,
-                                                                                      total_time))
+                                                                         total_time))
             print("Minimum travelling cost {}".format(self.history['best_cost']))
 
         self.history['generations'] = self.num_generation
@@ -67,6 +68,29 @@ class GeneticAlgorithm(object):
         self.history['best_individual'] = self.population.get_fittest()
 
         return self.history
+
+
+class SimpleGeneticAlgorithm(GeneticAlgorithm):
+    """
+    Simple Genetic algorithm
+    """
+
+    def evolve(self):
+        new_population = Population([])
+        pop_size = self.population_size
+
+        # Crossover
+        for _ in range(0, pop_size):
+            parent_1, parent_2 = self.select_fn(self.population)
+            child1, child2 = self.crossover_fn(parent_1, parent_2)
+            new_population.add(child1)
+            new_population.add(child2)
+
+        # Mutation
+        for i in range(0, pop_size):
+            self.mutate_fn(new_population[i])
+
+        self.population = new_population
 
 
 class ElitistReserveGeneticAlgorithm(GeneticAlgorithm):
@@ -106,8 +130,66 @@ class ElitistReserveGeneticAlgorithm(GeneticAlgorithm):
         self.population = new_population
 
 
+class SteadyGeneticAlgorithm(GeneticAlgorithm):
+    """
+    Steady GA that choose the best two from p1, p2, c1, c2 after the crossover,
+    """
+
+    def evolve(self):
+        new_population = Population([])
+        pop_size = self.population_size
+
+        # Crossover
+        for _ in range(0, pop_size):
+            parent_1, parent_2 = self.select_fn(self.population)
+            child1, child2 = self.crossover_fn(parent_1, parent_2)
+            small_group = [parent_1, parent_2, child1, child2]
+            child1, child2 = sorted(small_group, reverse=True)[0:2]
+            new_population.add(child1)
+            new_population.add(child2)
+
+        # Mutation
+        for i in range(0, pop_size):
+            self.mutate_fn(new_population[i])
+
+        self.population = new_population
+
+
+class SelectDownToSizeGeneticAlgorithm(GeneticAlgorithm):
+    """
+    Select Down To Size Genetic algorithm
+    """
+
+    def evolve(self):
+        raise NotImplemented
+
+
+class LonelyMutateGeneticAlgorithm(GeneticAlgorithm):
+    """
+    Lonely Mutate Genetic algorithm, No crossover will be performed
+    """
+
+    def evolve(self):
+        new_population = Population([])
+        pop_size = self.population_size
+
+        # Mutation
+        for i in range(0, pop_size):
+            old_one = self.population[i]
+            new_one = deepcopy(old_one)
+            self.mutate_fn(new_one)
+            if old_one.fitness >= new_one.fitness:
+                new_population.add(old_one)
+            else:
+                new_population.add(new_one)
+        self.population = new_population
+
+
 name2ga = {
-    'ElitistReserveGeneticAlgorithm': ElitistReserveGeneticAlgorithm
+    'SimpleGeneticAlgorithm': SimpleGeneticAlgorithm,
+    'ElitistReserveGeneticAlgorithm': ElitistReserveGeneticAlgorithm,
+    'SteadyGeneticAlgorithm': SteadyGeneticAlgorithm,
+    'LonelyMutateGeneticAlgorithm': LonelyMutateGeneticAlgorithm,
 }
 
 
@@ -119,3 +201,9 @@ def get_ga(args, **kwargs):
     GA = name2ga[ga_type]
     if ga_type == 'ElitistReserveGeneticAlgorithm':
         return GA(elitism_ratio=args.er, **kwargs)
+    elif ga_type == 'SteadyGeneticAlgorithm':
+        return GA(**kwargs)
+    elif ga_type == 'SimpleGeneticAlgorithm':
+        return GA(**kwargs)
+    elif ga_type == 'LonelyMutateGeneticAlgorithm':
+        return GA(**kwargs)
