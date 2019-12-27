@@ -24,4 +24,5 @@ This repository contains a generic Python implementation of a Genetic Algorithm 
 
 ## Reference   
 - [lccasagrande/TSP-GA](https://github.com/lccasagrande/TSP-GA)
+- [ytLab/gaft](https://github.com/PytLab/gaft)
 
