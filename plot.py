@@ -1,18 +1,7 @@
-import pandas as pd
 import matplotlib.pyplot as plt
 
-from base import Gene
 
-
-def get_genes_from(fn):
-    df = pd.read_csv(fn)
-    genes = [Gene(row['city'], row['x'], row['y'])
-             for _, row in df.iterrows()]
-
-    return genes
-
-
-def plot(costs, individual, save_to=None):
+def plot_summary(costs, individual, save_to=None):
     plt.rcParams['figure.figsize'] = (6.0, 3.0)  # set default size of plots
     plt.rcParams['image.interpolation'] = 'nearest'
     plt.rcParams['image.cmap'] = 'gray'
