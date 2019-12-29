@@ -1,5 +1,5 @@
 from random import random
-
+from math import sqrt
 from utils.func import get_k_idx
 
 

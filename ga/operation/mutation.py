@@ -1,4 +1,5 @@
-from random import random
+from random import random, shuffle
+from copy import deepcopy
 from math import sqrt
 
 from utils.func import get_k_idx
@@ -70,17 +71,17 @@ class FlipInverseMutation(GAMutation):
 
 
 class WarmUpFlipInverseMutation(GAMutation):
-    def __init__(self, mutation_rate, warm_up=800, decay=1000):
+    def __init__(self, mutation_rate, warm_up=800, base=5):
         super().__init__(mutation_rate)
         self.warm_up = warm_up
         self.step = 1
-        self.decay = decay
+        self.base = base
 
     def adjust_mutation_rate(self):
-        mutation_rate = self.mutation_rate
-        i = self.step / self.decay
+        i = self.step
         warm_up = self.warm_up
-        self.mutation_rate = mutation_rate * min(1. / sqrt(i), i / (warm_up * sqrt(warm_up)))
+        base = self.base
+        self.mutation_rate = base * min(1. / sqrt(i), i / (warm_up * sqrt(warm_up)))
 
     def mutate(self, individual):
         num_genes = len(individual.genes)
@@ -100,7 +101,53 @@ class WarmUpFlipInverseMutation(GAMutation):
                     start_at += 1
                     finish_at -= 1
                 mutator_i += 2
+        self.adjust_mutation_rate()
         self.step += 1
+
+
+class InsertMutation(GAMutation):
+
+    def mutate(self, individual):
+        num_genes = len(individual.genes)
+        mutator_t = self.mutation_rate * num_genes
+        mutator_i = 0
+        while mutator_i < mutator_t:
+            start_at, finish_at = get_k_idx(0, num_genes, k=2, sort=True)
+            fraction_1 = [g for g in individual.genes[:start_at + 1]]
+            fraction_2 = [individual.genes[finish_at]]
+            fraction_3 = [g for g in individual.genes[start_at + 1:finish_at]]
+            fraction_4 = [g for g in individual.genes[finish_at + 1:]]
+            cnt = 0
+            for g in fraction_1:
+                individual.genes[cnt] = g
+                cnt += 1
+            for g in fraction_2:
+                individual.genes[cnt] = g
+                cnt += 1
+            for g in fraction_3:
+                individual.genes[cnt] = g
+                cnt += 1
+            for g in fraction_4:
+                individual.genes[cnt] = g
+                cnt += 1
+            mutator_i += 2
+
+
+class ScrambleMutation(GAMutation):
+    def mutate(self, individual):
+        num_genes = len(individual.genes)
+        mutator_t = self.mutation_rate * num_genes
+        mutator_i = 0
+        while mutator_i < mutator_t:
+            start_at, finish_at = get_k_idx(0, num_genes, k=2, sort=True)
+            rand_idx = [i for i in range(start_at, finish_at + 1)]
+            shuffle(rand_idx)
+            old_genes = [g for g in individual.genes[start_at:finish_at]]
+            cnt = 0
+            for i in range(start_at, finish_at):
+                individual.genes[i] = old_genes[cnt]
+                cnt += 1
+            mutator_i += 2
 
 
 name2mutation = {
@@ -108,6 +155,8 @@ name2mutation = {
     'InverseMutation': InverseMutation,
     'FlipInverseMutation': FlipInverseMutation,
     'WarmUpFlipInverseMutation': WarmUpFlipInverseMutation,
+    'InsertMutation': InsertMutation,
+    'ScrambleMutation': ScrambleMutation,
 }
 
 
@@ -118,5 +167,5 @@ def get_mutation(args):
     print('Using Mutation: %s' % mutation_type)
     Mutation = name2mutation[mutation_type]
     if mutation_type == 'WarmUpFlipInverseMutation':
-        return Mutation(mutation_rate=args.mr, warm_up=args.warm_up, decay=args.decay)
+        return Mutation(mutation_rate=args.mr, warm_up=args.m_warm_up, base=args.m_base)
     return Mutation(args.mr)

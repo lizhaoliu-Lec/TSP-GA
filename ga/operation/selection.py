@@ -52,6 +52,9 @@ class TournamentSelection(GASelection):
         super().__init__(fitness_fn)
         self.tournament_size = tournament_size
 
+    def competition(self, competitors):
+        return max(competitors, key=self.fitness_fn)
+
     def select(self, population):
         """
         Select a pair of parent using Tournament strategy.
@@ -61,11 +64,24 @@ class TournamentSelection(GASelection):
         competitors1 = Population(sample(population.individuals, num_competitors))
         competitors2 = Population(sample(population.individuals, num_competitors))
 
-        def competition(competitors):
-            return max(competitors, key=self.fitness_fn)
-
-        father, mother = competition(competitors1), competition(competitors2)
+        father, mother = self.competition(competitors1), self.competition(competitors2)
         return father, mother
+
+
+class RandomTournamentSelection(TournamentSelection):
+    def __init__(self, fitness_fn, tournament_size=2, worse_rate=0.01):
+        """
+        Selection operator using Random Tournament Strategy.
+        Different from Tournament Strategy, Random Tournament Strategy may choose worst with probability worse_rate
+        """
+        super().__init__(fitness_fn, tournament_size=tournament_size)
+        self.worse_rate = worse_rate
+
+    def competition(self, competitors):
+        if random() < self.worse_rate:
+            return min(competitors, key=self.fitness_fn)
+        else:
+            return max(competitors, key=self.fitness_fn)
 
 
 class LinearRankingSelection(GASelection):
@@ -146,7 +162,7 @@ name2selection = {
     'TournamentSelection': TournamentSelection,
     'LinearRankingSelection': LinearRankingSelection,
     'ExponentialRankingSelection': ExponentialRankingSelection,
-
+    'RandomTournamentSelection': RandomTournamentSelection,
 }
 
 
@@ -164,3 +180,5 @@ def get_selection(fitness_fn, args):
         return Selection(fitness_fn, p_min=args.p_min, p_max=args.p_max)
     elif selection_type == 'ExponentialRankingSelection':
         return Selection(fitness_fn, base=args.base)
+    elif selection_type == 'RandomTournamentSelection':
+        return Selection(fitness_fn, tournament_size=args.tour_size, worse_rate=args.worse_rate)

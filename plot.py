@@ -20,7 +20,7 @@ def plot_summary(costs, individual, save_to=None):
 
 def plot_ga_convergence(costs):
     x = range(len(costs))
-    plt.title("GA Convergence")
+    plt.title("ASGA Convergence")
     plt.xlabel('num generation')
     plt.ylabel('cost')
     plt.text(x[len(x) // 2], costs[0], 'min cost: {}'.format(min(costs)), ha='center', va='center')

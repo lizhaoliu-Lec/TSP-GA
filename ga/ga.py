@@ -1,6 +1,7 @@
 from sys import maxsize
 from time import time
 from copy import deepcopy
+from random import random
 
 from ga.base import Population
 
@@ -11,12 +12,15 @@ class GeneticAlgorithm(object):
     """
 
     def __init__(self,
-                 select_fn, cross_fn, mutate_fn,
+                 selection, crossover, mutation,
                  population_size, num_generation,
                  verbose=True, print_every=10):
-        self.select_fn = select_fn
-        self.crossover_fn = cross_fn
-        self.mutate_fn = mutate_fn
+        self.selection = selection
+        self.crossover = crossover
+        self.mutation = mutation
+        self.select_fn = self.selection.select
+        self.cross_fn = self.crossover.cross
+        self.mutate_fn = self.mutation.mutate
         self.population_size = population_size
         self.num_generation = num_generation
 
@@ -49,7 +53,7 @@ class GeneticAlgorithm(object):
                 self.history['best_cost'] = best_cost
 
             if self.verbose:
-                if i % self.print_every == 0 or i == 0:
+                if i % self.print_every == 0 or i == 0 or i == self.num_generation - 1:
                     print('(%4d / %4d) current cost: %.2f, min cost: %.2f' % (
                         i, self.num_generation, cost, best_cost))
 
@@ -82,7 +86,7 @@ class SimpleGeneticAlgorithm(GeneticAlgorithm):
         # Crossover
         for _ in range(0, pop_size):
             parent_1, parent_2 = self.select_fn(self.population)
-            child1, child2 = self.crossover_fn(parent_1, parent_2)
+            child1, child2 = self.cross_fn(parent_1, parent_2)
             new_population.add(child1)
             new_population.add(child2)
 
@@ -119,7 +123,7 @@ class ElitistReserveGeneticAlgorithm(GeneticAlgorithm):
         # Crossover
         for _ in range(elitism_size, pop_size):
             parent_1, parent_2 = self.select_fn(new_population)
-            child1, child2 = self.crossover_fn(parent_1, parent_2)
+            child1, child2 = self.cross_fn(parent_1, parent_2)
             new_population.add(child1)
             new_population.add(child2)
 
@@ -142,7 +146,7 @@ class SteadyGeneticAlgorithm(GeneticAlgorithm):
         # Crossover
         for _ in range(0, pop_size):
             parent_1, parent_2 = self.select_fn(self.population)
-            child1, child2 = self.crossover_fn(parent_1, parent_2)
+            child1, child2 = self.cross_fn(parent_1, parent_2)
             small_group = [parent_1, parent_2, child1, child2]
             child1, child2 = sorted(small_group, reverse=True)[0:2]
             new_population.add(child1)
@@ -152,6 +156,95 @@ class SteadyGeneticAlgorithm(GeneticAlgorithm):
         for i in range(0, pop_size):
             self.mutate_fn(new_population[i])
 
+        self.population = new_population
+
+
+class MoreMutateSteadyGeneticAlgorithm(GeneticAlgorithm):
+    """
+    More Mutate Steady GA different from the Steady GA that only mutate the worst one out of two children instead of
+    all individuals.
+    """
+
+    def evolve(self):
+        new_population = Population([])
+        pop_size = self.population_size
+
+        # Crossover and Mutation
+        for _ in range(0, pop_size):
+            parent_1, parent_2 = self.select_fn(self.population)
+            child1, child2 = self.cross_fn(parent_1, parent_2)
+            small_group = [parent_1, parent_2, child1, child2]
+            child1, child2 = sorted(small_group, reverse=True)[0:2]
+            new_population.add(child1)
+            new_population.add(child2)
+
+        # Mutation
+        for i in range(0, pop_size):
+            if i % 2 == 0:  # better child
+                if random() > 0.5:
+                    self.mutate_fn(new_population[i])
+            else:  # worse child
+                self.mutate_fn(new_population[i])
+
+        self.population = new_population
+
+
+class AdaptiveGeneticAlgorithm(GeneticAlgorithm):
+    """
+    Adaptive GA that change the crossover rate and mutation rate adaptively
+    """
+
+    def __init__(self, delta_crossover_rate, delta_mutation_rate,
+                 min_crossover_rate=0.001, min_mutation_rate=0.001,
+                 **kwargs):
+        super().__init__(**kwargs)
+        self.delta_crossover_rate = delta_crossover_rate
+        self.delta_mutation_rate = delta_mutation_rate
+        self.min_crossover_rate = min_crossover_rate
+        self.min_mutation_rate = min_mutation_rate
+        self.mutation_rate_records = []
+        self.crossover_rate_records = []
+
+    def adjust_cr_and_mr(self, cross_evaluation, mutation_evaluation):
+        cr, mr = self.crossover.cross_rate, self.mutation.mutation_rate
+        delta_cr, delta_mr = self.delta_crossover_rate, self.delta_mutation_rate
+        min_cr, min_mr = self.min_crossover_rate, self.min_mutation_rate
+        if cross_evaluation > mutation_evaluation:
+            self.crossover.cross_rate = min(1, cr + delta_cr)
+            self.mutation.mutation_rate = max(min_mr, mr - delta_mr)
+        else:
+            self.crossover.cross_rate = max(min_cr, cr - delta_cr)
+            self.mutation.mutation_rate = min(1, mr + delta_mr)
+        self.mutation_rate_records.append(self.mutation.mutation_rate)
+        self.crossover_rate_records.append(self.crossover.cross_rate)
+
+    def evolve(self):
+        new_population = Population([])
+        pop_size = self.population_size
+
+        cross_evaluations = []
+        # Crossover
+        for _ in range(0, pop_size):
+            parent_1, parent_2 = self.select_fn(self.population)
+            child1, child2 = self.cross_fn(parent_1, parent_2)
+            small_group = [parent_1, parent_2, child1, child2]
+            child1, child2 = sorted(small_group, reverse=True)[0:2]
+            cross_fitness_diff = child1.fitness + child2.fitness - (parent_1.fitness + parent_2.fitness)
+            cross_evaluations.append(cross_fitness_diff)
+            new_population.add(child1)
+            new_population.add(child2)
+        cross_evaluation = sum(cross_evaluations) / len(cross_evaluations)
+
+        mutation_evaluations = []
+        # Mutation
+        for i in range(0, pop_size):
+            old_fitness = new_population[i].fitness
+            self.mutate_fn(new_population[i])
+            new_fitness = new_population[i].fitness
+            mutation_evaluations.append(new_fitness - old_fitness)
+        mutation_evaluation = sum(mutation_evaluations) / len(mutation_evaluations)
+
+        self.adjust_cr_and_mr(cross_evaluation, mutation_evaluation)
         self.population = new_population
 
 
@@ -190,6 +283,8 @@ name2ga = {
     'ElitistReserveGeneticAlgorithm': ElitistReserveGeneticAlgorithm,
     'SteadyGeneticAlgorithm': SteadyGeneticAlgorithm,
     'LonelyMutateGeneticAlgorithm': LonelyMutateGeneticAlgorithm,
+    'MoreMutateSteadyGeneticAlgorithm': MoreMutateSteadyGeneticAlgorithm,
+    'AdaptiveGeneticAlgorithm': AdaptiveGeneticAlgorithm,
 }
 
 
@@ -201,9 +296,9 @@ def get_ga(args, **kwargs):
     GA = name2ga[ga_type]
     if ga_type == 'ElitistReserveGeneticAlgorithm':
         return GA(elitism_ratio=args.er, **kwargs)
-    elif ga_type == 'SteadyGeneticAlgorithm':
-        return GA(**kwargs)
-    elif ga_type == 'SimpleGeneticAlgorithm':
-        return GA(**kwargs)
-    elif ga_type == 'LonelyMutateGeneticAlgorithm':
+    elif ga_type == 'AdaptiveGeneticAlgorithm':
+        return GA(delta_crossover_rate=args.d_cr, delta_mutation_rate=args.d_mr,
+                  min_crossover_rate=args.m_cr, min_mutation_rate=args.m_mr,
+                  **kwargs)
+    else:
         return GA(**kwargs)

@@ -7,5 +7,5 @@ def get_k_idx(min_val, max_val, k=2, sort=False):
     """
     idx = sample(range(min_val, max_val), k)
     if sort:
-        sorted(idx)
+        idx = sorted(idx)
     return idx
